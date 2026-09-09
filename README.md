@@ -41,13 +41,18 @@ devtools::load_all("package")
 
 ## Render the R Markdown example
 
-The example file is `usage_examples.Rmd`. It can be rendered to HTML with:
+The example file is `usage_examples.Rmd`. Its main output format is PDF and the author is set to `Aimar Barrena`.
 
 ```r
 rmarkdown::render("usage_examples.Rmd")
 ```
 
-This requires Pandoc to be available on the system path. RStudio usually includes Pandoc automatically.
+This requires Pandoc and a LaTeX distribution to be available on the system path. RStudio usually includes Pandoc automatically. If LaTeX is missing, the lightweight option is TinyTeX:
+
+```r
+install.packages("tinytex")
+tinytex::install_tinytex()
+```
 
 ## Current example dataset
 

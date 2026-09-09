@@ -1,6 +1,7 @@
 ---
 title: "SME DataPrep R examples"
-output: html_document
+author: "Aimar Barrena"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
