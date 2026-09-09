@@ -1,0 +1,64 @@
+---
+title: "SME DataPrep R examples"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(smeDataPrep)
+```
+
+# Example dataset
+
+This document uses a small synthetic dataset. Later, it can be replaced with a Kaggle dataset that has numerical variables, categorical variables, and one binary target.
+
+```{r}
+data <- data.frame(
+  age = c(22, 35, 58, 45, 29, 41, 63, 50),
+  income = c(1200, 2500, 4200, 3900, 1800, 3100, 5100, 4700),
+  segment = c("low", "medium", "high", "high", "low", "medium", "high", "high"),
+  region = c("north", "north", "south", "east", "west", "east", "south", "west"),
+  target = c(0, 0, 1, 1, 0, 1, 1, 1)
+)
+
+dataset <- sme_dataset(data, target = "target")
+data
+```
+
+# Metrics
+
+Numerical variables receive variance and AUC. Categorical variables receive entropy.
+
+```{r}
+attribute_metrics(data, target = "target", positive_class = 1)
+```
+
+# Discretization
+
+```{r}
+discretize_dataset_equal_width(data[c("age", "income")], bins = 3)
+discretize_dataset_equal_frequency(data[c("age", "income")], bins = 3)
+```
+
+# Normalization and standardization
+
+```{r}
+normalize_dataset(data)
+standardize_dataset(data)
+```
+
+# Filtering and associations
+
+```{r}
+filter_variables(data, metric = "auc", threshold = 0.7, target = "target", positive_class = 1)
+
+matrix <- association_matrix(data[c("age", "income", "segment", "region")])
+matrix
+```
+
+# Plots
+
+```{r}
+plot_auc_values(data, target = "target", positive_class = 1)
+plot_association_matrix(matrix)
+```

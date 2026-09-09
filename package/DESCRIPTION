@@ -1,0 +1,18 @@
+Package: smeDataPrep
+Type: Package
+Title: Educational Data Preprocessing Tools
+Version: 0.1.0
+Authors@R: person("Aimar", "Barrena Pol", email = "aimar@example.com", role = c("aut", "cre"))
+Author: Aimar Barrena Pol
+Maintainer: Aimar Barrena Pol <aimar@example.com>
+Description: Educational implementations of data preprocessing utilities for
+    the Software Matematico y Estadistico coursework, including discretization,
+    entropy, AUC, normalization, standardization, filtering, and association
+    matrices.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Suggests:
+    knitr,
+    rmarkdown

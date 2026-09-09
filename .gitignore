@@ -1,0 +1,10 @@
+.Rproj.user
+.DS_Store
+.Rhistory
+.RData
+.Ruserdata
+*.Rcheck/
+*.tar.gz
+docs/
+usage_examples.html
+usage_examples.pdf
