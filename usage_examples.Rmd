@@ -82,6 +82,27 @@ head(discretize_dataset_equal_width(analysis_data[numeric_features], bins = 4))
 head(discretize_dataset_equal_frequency(analysis_data[numeric_features], bins = 4))
 ```
 
+The package also includes two additional discretization methods. `discretize_by_thresholds` lets the analyst choose meaningful cut points. In Titanic, an age threshold can separate children, adults, and older passengers.
+
+`discretize_by_standard_deviation` groups values according to how far they are from the mean. This is useful when the relative position of a value is more important than its original unit.
+
+```{r}
+age_groups <- discretize_by_thresholds(
+  analysis_data$Age,
+  thresholds = c(12, 60),
+  labels = c("child", "adult", "older")
+)
+
+fare_sd_groups <- discretize_by_standard_deviation(analysis_data$Fare)
+
+head(data.frame(
+  Age = analysis_data$Age,
+  age_group = age_groups,
+  Fare = analysis_data$Fare,
+  fare_sd_group = fare_sd_groups
+), 10)
+```
+
 # Normalization and standardization
 
 Normalization and standardization are transformations for numerical variables. They do not change the order of the observations, but they change the scale.
@@ -125,13 +146,15 @@ matrix
 
 # Plots
 
-The ROC curve is the specific plot associated with AUC. It shows the tradeoff between true positive rate and false positive rate for all possible thresholds of one numerical attribute. Here we draw the ROC curve for `Fare` as an example.
+The ROC curve is the specific plot associated with AUC. It shows the tradeoff between true positive rate and false positive rate for all possible thresholds of one numerical attribute. Here we draw the ROC curve for `Fare` as an example. `plot_roc_curves` extends this idea to several attributes in the same figure.
 
-The barplot created by `compare_auc_values` is different: it summarizes and compares the final AUC values of several numerical attributes in one figure. The association matrix plot gives a compact visual summary of pairwise relationships between the selected variables.
+The barplot created by `compare_auc_values` is different: it summarizes and compares the final AUC values of several numerical attributes in one figure. `plot_variable_distribution` shows the estimated distribution of a numerical variable. With `by_class = TRUE`, it draws one curve for each target class, which helps compare survivors and non-survivors. The association matrix plot gives a compact visual summary of pairwise relationships between the selected variables.
 
 ```{r}
 plot_roc_curve(analysis_data$Fare, analysis_data$Survived, positive_class = 1, label = "Fare")
+plot_roc_curves(analysis_data, target = "Survived", columns = c("Age", "Fare", "SibSp", "Parch"), positive_class = 1)
 compare_auc_values(analysis_data, target = "Survived", positive_class = 1)
+plot_variable_distribution(analysis_data, variable = "Fare", target = "Survived", by_class = TRUE)
 plot_association_matrix(matrix)
 ```
 

@@ -67,7 +67,14 @@ The R Markdown document intentionally ignores identifiers and high-cardinality t
 The AUC visualization section includes two different plots:
 
 - `plot_roc_curve`: the standard ROC curve for one numerical attribute.
+- `plot_roc_curves`: several ROC curves in one figure, using selected columns or all numerical columns when `columns = NULL`.
 - `compare_auc_values`: a barplot that compares final AUC values across several numerical attributes.
+
+Additional implemented extras:
+
+- `discretize_by_thresholds`: manual cut points chosen by the analyst.
+- `discretize_by_standard_deviation`: groups values by distance from the mean.
+- `plot_variable_distribution`: density plot, optionally split by target class.
 
 ## Second dataset recommendation
 
