@@ -12,8 +12,10 @@
 \alias{mutual_information}
 \alias{normalize_dataset}
 \alias{normalize_variable}
+\alias{compare_auc_values}
 \alias{plot_association_matrix}
 \alias{plot_auc_values}
+\alias{plot_roc_curve}
 \alias{read_sme_dataset}
 \alias{sme_dataset}
 \alias{standardize_dataset}
@@ -47,6 +49,10 @@ It calculates category probabilities and applies \code{-sum(p * log(p))}.
 binary target. The function compares every positive observation with every
 negative observation. Higher positive scores count as one win, ties count as
 half a win, and the final AUC is the average across all pairs.
+\code{plot_roc_curve()} draws the standard ROC curve for one numerical
+attribute by calculating true positive rate and false positive rate at all
+possible thresholds. \code{compare_auc_values()} draws a barplot that compares
+the final AUC values of several numerical attributes.
 
 \strong{Normalization and standardization.} \code{normalize_variable()} rescales
 values to \code{[0, 1]}. \code{standardize_variable()} converts values to
@@ -76,6 +82,8 @@ association_matrix(data)
 sme_dataset(data, target = NULL)
 read_sme_dataset(path, target = NULL, ...)
 write_sme_dataset(dataset, path, ...)
+plot_roc_curve(scores, target, positive_class = NULL, label = "attribute")
+compare_auc_values(data, target, positive_class = NULL)
 plot_auc_values(data, target, positive_class = NULL)
 plot_association_matrix(matrix)
 }
@@ -96,6 +104,7 @@ numerical attribute.}
 \item{target}{Binary target vector or target column name, depending on the
 function.}
 \item{positive_class}{Class value treated as positive when calculating AUC.}
+\item{label}{Optional label used in the ROC plot legend.}
 \item{metric}{Metric name used for filtering, such as \code{"variance"},
 \code{"auc"}, or \code{"entropy"}.}
 \item{threshold}{Numeric threshold used for filtering variables.}
@@ -110,8 +119,10 @@ function.}
 ordered factor columns. Metric functions return numeric values or a data frame
 with columns \code{attribute}, \code{metric}, and \code{value}. Preprocessing
 functions return transformed vectors or data frames. \code{association_matrix()}
-returns a square numeric matrix. Plot functions draw a plot and invisibly return
-the plotted object.
+returns a square numeric matrix. \code{plot_roc_curve()} draws a ROC curve and
+invisibly returns the curve points. \code{compare_auc_values()} and
+\code{plot_auc_values()} draw a comparison barplot and invisibly return the AUC
+table used in the plot.
 }
 \examples{
 data <- data.frame(

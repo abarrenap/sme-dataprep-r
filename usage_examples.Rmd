@@ -125,10 +125,13 @@ matrix
 
 # Plots
 
-The following plots provide the required visual summaries. The AUC plot makes it easier to compare numerical variables as predictors of survival. The association matrix plot gives a compact visual summary of pairwise relationships between the selected variables.
+The ROC curve is the specific plot associated with AUC. It shows the tradeoff between true positive rate and false positive rate for all possible thresholds of one numerical attribute. Here we draw the ROC curve for `Fare` as an example.
+
+The barplot created by `compare_auc_values` is different: it summarizes and compares the final AUC values of several numerical attributes in one figure. The association matrix plot gives a compact visual summary of pairwise relationships between the selected variables.
 
 ```{r}
-plot_auc_values(analysis_data, target = "Survived", positive_class = 1)
+plot_roc_curve(analysis_data$Fare, analysis_data$Survived, positive_class = 1, label = "Fare")
+compare_auc_values(analysis_data, target = "Survived", positive_class = 1)
 plot_association_matrix(matrix)
 ```
 
