@@ -60,3 +60,29 @@ write_sme_dataset <- function(dataset, path, ...) {
   write.csv(dataset$data, path, row.names = FALSE, ...)
   invisible(path)
 }
+
+#' Summarize an SME dataset object.
+#'
+#' @param dataset SME dataset object.
+#' @return List produced by `dataset_summary`.
+#' @export
+summary_sme_dataset <- function(dataset) {
+  if (!inherits(dataset, "sme_dataset")) stop("dataset must be an sme_dataset object.")
+  dataset_summary(dataset$data)
+}
+
+#' Impute missing values in an SME dataset object.
+#'
+#' @param dataset SME dataset object.
+#' @param strategy Imputation strategy passed to `impute_missing_values`.
+#' @param fill_value Constant value used when `strategy = "constant"`.
+#' @param columns Optional columns to impute.
+#' @return SME dataset object with imputed data and the same target.
+#' @export
+impute_sme_dataset <- function(dataset, strategy = "auto", fill_value = NULL, columns = NULL) {
+  if (!inherits(dataset, "sme_dataset")) stop("dataset must be an sme_dataset object.")
+  sme_dataset(
+    impute_missing_values(dataset$data, strategy = strategy, fill_value = fill_value, columns = columns),
+    target = dataset$target
+  )
+}

@@ -3,6 +3,8 @@
 \alias{attribute_metrics}
 \alias{auc_score}
 \alias{correlation_pair}
+\alias{dataset_summary}
+\alias{detect_variable_types}
 \alias{discretize_by_standard_deviation}
 \alias{discretize_by_thresholds}
 \alias{discretize_dataset_by_standard_deviation}
@@ -13,6 +15,9 @@
 \alias{discretize_equal_width}
 \alias{entropy}
 \alias{filter_variables}
+\alias{impute_missing_values}
+\alias{impute_sme_dataset}
+\alias{missing_value_report}
 \alias{mutual_information}
 \alias{normalize_dataset}
 \alias{normalize_variable}
@@ -27,7 +32,9 @@
 \alias{sme_dataset}
 \alias{standardize_dataset}
 \alias{standardize_variable}
+\alias{summary_sme_dataset}
 \alias{variance_metric}
+\alias{validate_binary_target}
 \alias{write_sme_dataset}
 \title{Core data preprocessing functions}
 \description{
@@ -75,8 +82,21 @@ returned as \code{NA} in this first version.
 \strong{Distribution plots.} \code{plot_variable_distribution()} draws a kernel
 density estimate for one numerical variable. If a target is provided and
 \code{by_class = TRUE}, it draws one line per class.
+
+\strong{Dataset management.} \code{dataset_summary()} gives a compact overview
+of dataset dimensions, detected variable types, missing values, and numerical or
+categorical columns. \code{missing_value_report()} reports missing counts and
+rates. \code{detect_variable_types()} classifies variables for preprocessing.
+\code{validate_binary_target()} checks that a target can be used for AUC.
+\code{impute_missing_values()} fills missing values using transparent median,
+mean, mode, or constant strategies.
 }
 \usage{
+dataset_summary(data)
+missing_value_report(data)
+detect_variable_types(data, high_cardinality_threshold = 0.5)
+validate_binary_target(data, target)
+impute_missing_values(data, strategy = "auto", fill_value = NULL, columns = NULL)
 discretize_equal_width(x, bins = 5)
 discretize_equal_frequency(x, bins = 5)
 discretize_by_thresholds(x, thresholds, labels = NULL)
@@ -98,6 +118,8 @@ correlation_pair(x, y)
 mutual_information(x, y, base = 2)
 association_matrix(data)
 sme_dataset(data, target = NULL)
+summary_sme_dataset(dataset)
+impute_sme_dataset(dataset, strategy = "auto", fill_value = NULL, columns = NULL)
 read_sme_dataset(path, target = NULL, ...)
 write_sme_dataset(dataset, path, ...)
 plot_roc_curve(scores, target, positive_class = NULL, label = "attribute")
@@ -119,6 +141,11 @@ discretization. For dataset functions this can also be a named list.}
 \item{sd_thresholds}{Cut points expressed in standard deviations from the mean.}
 \item{labels}{Optional group labels for discretization functions.}
 \item{data}{A data frame containing the variables to transform or evaluate.}
+\item{high_cardinality_threshold}{Unique-value proportion used to identify
+high-cardinality categorical variables.}
+\item{strategy}{Missing-value imputation strategy: \code{"auto"},
+\code{"mean"}, \code{"median"}, \code{"mode"}, or \code{"constant"}.}
+\item{fill_value}{Constant used when \code{strategy = "constant"}.}
 \item{columns}{Optional character vector with column names to transform. If
 \code{NULL}, all numerical columns are used where appropriate.}
 \item{sample}{Use sample variance when \code{TRUE}; otherwise population
@@ -152,7 +179,8 @@ invisibly returns the curve points. \code{compare_auc_values()} and
 \code{plot_auc_values()} draw a comparison barplot and invisibly return the AUC
 table used in the plot. \code{plot_variable_distribution()} draws a density
 plot and invisibly returns the density object, or a named list of density
-objects when grouped by class.
+objects when grouped by class. Dataset management functions return lists, data
+frames, booleans, or imputed data frames depending on the function.
 }
 \examples{
 data <- data.frame(

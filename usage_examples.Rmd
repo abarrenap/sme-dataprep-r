@@ -52,6 +52,29 @@ dataset <- sme_dataset(analysis_data, target = "Survived")
 head(analysis_data)
 ```
 
+# Dataset management utilities
+
+Before applying metrics or transformations, it is useful to inspect the structure of the dataset. `detect_variable_types` classifies columns as numerical, categorical, binary, identifiers, or high-cardinality categorical variables. `missing_value_report` shows where missing data appears. `validate_binary_target` checks that the target is suitable for AUC. `impute_missing_values` creates a cleaned copy by filling missing numerical values with the median and categorical values with the mode when `strategy = "auto"`.
+
+```{r}
+validate_binary_target(analysis_data, "Survived")
+detect_variable_types(analysis_data)
+```
+
+```{r}
+missing_value_report(analysis_data)
+```
+
+```{r}
+imputed_data <- impute_missing_values(analysis_data, strategy = "auto")
+missing_value_report(imputed_data)
+```
+
+```{r}
+summary <- dataset_summary(analysis_data)
+summary[c("n_rows", "n_columns", "numerical_columns", "categorical_columns")]
+```
+
 # Metrics
 
 The function `attribute_metrics` chooses a metric according to the type of each variable. For numerical variables, it computes variance and, when a binary target is provided, AUC. For categorical variables, it computes entropy.
