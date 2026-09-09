@@ -18,9 +18,17 @@ if (requireNamespace("smeDataPrep", quietly = TRUE)) {
 
 This document illustrates the package with the Titanic training dataset stored in `data/titanic/train.csv`. The target variable is `Survived`, where `1` means the passenger survived and `0` means they did not.
 
+The objective is to show how the functions in the package can be used to preprocess and describe a real dataset. Titanic is useful for this first example because it combines numerical variables such as `Age` and `Fare`, categorical variables such as `Sex` and `Embarked`, and a binary supervised target, `Survived`.
+
+The examples are deliberately written step by step. For each group of functions, this document explains what the method measures, why it is useful in data preprocessing, and how the implemented function calculates it.
+
 # Data
 
-The Titanic training file has passenger-level information and the binary outcome `Survived`. For this first example, we keep a focused set of variables so every function is easy to interpret.
+The Titanic training file has passenger-level information and the binary outcome `Survived`.
+
+For this first example, we keep a focused set of variables. `Age`, `SibSp`, `Parch`, and `Fare` are treated as numerical variables. `Pclass`, `Sex`, and `Embarked` are treated as categorical variables. `Pclass` appears as a number in the CSV file, but it represents first, second, or third passenger class, so it is more meaningful to handle it as a category.
+
+Columns such as `PassengerId`, `Name`, `Ticket`, and `Cabin` are not used in this first walkthrough. They contain identifiers or high-cardinality text values, which are less useful for explaining the required preprocessing functions clearly.
 
 ```{r}
 raw_data <- read.csv("data/titanic/train.csv")
@@ -45,7 +53,13 @@ head(analysis_data)
 
 # Metrics
 
-Numerical variables receive variance and AUC. Categorical variables receive entropy.
+The function `attribute_metrics` chooses a metric according to the type of each variable. For numerical variables, it computes variance and, when a binary target is provided, AUC. For categorical variables, it computes entropy.
+
+Variance measures how spread out a numerical variable is around its mean. A variable with variance close to zero has almost the same value for every row, so it usually contains little information.
+
+Entropy measures the uncertainty or diversity of a categorical variable. If almost all passengers have the same category, entropy is low. If the categories are more evenly distributed, entropy is higher.
+
+AUC means Area Under the ROC Curve. In this package it is implemented from pairwise comparisons: every survivor is compared with every non-survivor. If the survivor has a higher value for the numerical attribute, it counts as a win; if both values are equal, it counts as half a win. The final AUC is the proportion of wins over all possible survivor/non-survivor pairs. An AUC of 0.5 means the attribute is not better than random ordering, while values closer to 1 mean higher values of the attribute are more associated with survival.
 
 ```{r}
 metrics <- attribute_metrics(analysis_data, target = "Survived", positive_class = 1)
@@ -53,6 +67,12 @@ metrics
 ```
 
 # Discretization
+
+Discretization converts a numerical variable into a categorical one by placing values into intervals or bins. This is useful when an algorithm or a metric expects discrete values, or when we want to simplify a continuous variable for interpretation.
+
+Equal-width discretization divides the range between the minimum and maximum value into intervals of the same size. For example, the width of each `Age` interval is determined by the age range divided by the number of bins.
+
+Equal-frequency discretization sorts the observations and creates bins with approximately the same number of rows. This means the numerical width of the bins can be different, but their frequency is more balanced.
 
 ```{r}
 numeric_features <- c("Age", "SibSp", "Parch", "Fare")
@@ -63,12 +83,30 @@ head(discretize_dataset_equal_frequency(analysis_data[numeric_features], bins = 
 
 # Normalization and standardization
 
+Normalization and standardization are transformations for numerical variables. They do not change the order of the observations, but they change the scale.
+
+Normalization rescales a variable to the interval `[0, 1]`. The minimum value becomes 0 and the maximum value becomes 1. This is useful when variables have very different units, such as age in years and fare in pounds.
+
+Standardization subtracts the mean and divides by the standard deviation. After this transformation, the variable has mean 0 and standard deviation 1. This is useful when we want to compare variables on a common scale while preserving how far each observation is from the average.
+
 ```{r}
 head(normalize_dataset(analysis_data[numeric_features]))
 head(standardize_dataset(analysis_data[numeric_features]))
 ```
 
 # Filtering and associations
+
+Variable filtering uses the metrics calculated earlier to keep only variables that satisfy a threshold. This is a simple preprocessing strategy for reducing a dataset before later analysis.
+
+In this example, we keep numerical variables whose AUC is at least 0.55. The threshold is intentionally modest because a single Titanic variable is not expected to perfectly separate survivors from non-survivors. The goal is to show the mechanism: calculate a metric for each variable, compare it with a threshold, and return a new dataset with the variables that pass the rule.
+
+The function `association_matrix` compares variables two by two. The measure depends on the types of the pair.
+
+For two numerical variables, the package calculates Pearson correlation. This measures linear association and returns values between -1 and 1. A value near 1 means both variables tend to increase together, a value near -1 means one tends to decrease when the other increases, and a value near 0 means there is little linear association.
+
+For two categorical variables, the package calculates mutual information. Mutual information measures how much knowing one variable reduces uncertainty about the other. It is computed from entropy: the entropy of each variable is compared with the entropy of their joint distribution.
+
+For mixed numerical-categorical pairs, the matrix returns missing values in this first version, because the assignment specifically asks for correlation for numerical variables and mutual information for categorical variables.
 
 ```{r}
 filtered_by_auc <- filter_variables(
@@ -85,6 +123,8 @@ matrix
 ```
 
 # Plots
+
+The following plots provide the required visual summaries. The AUC plot makes it easier to compare numerical variables as predictors of survival. The association matrix plot gives a compact visual summary of pairwise relationships between the selected variables.
 
 ```{r}
 plot_auc_values(analysis_data, target = "Survived", positive_class = 1)
