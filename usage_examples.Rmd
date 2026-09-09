@@ -5,24 +5,42 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(smeDataPrep)
+if (requireNamespace("smeDataPrep", quietly = TRUE)) {
+  library(smeDataPrep)
+} else {
+  for (file in list.files("package/R", full.names = TRUE)) {
+    source(file)
+  }
+}
 ```
 
-# Example dataset
+# Goal
 
-This document uses a small synthetic dataset. Later, it can be replaced with a Kaggle dataset that has numerical variables, categorical variables, and one binary target.
+This document illustrates the package with the Titanic training dataset stored in `data/titanic/train.csv`. The target variable is `Survived`, where `1` means the passenger survived and `0` means they did not.
+
+# Data
+
+The Titanic training file has passenger-level information and the binary outcome `Survived`. For this first example, we keep a focused set of variables so every function is easy to interpret.
 
 ```{r}
-data <- data.frame(
-  age = c(22, 35, 58, 45, 29, 41, 63, 50),
-  income = c(1200, 2500, 4200, 3900, 1800, 3100, 5100, 4700),
-  segment = c("low", "medium", "high", "high", "low", "medium", "high", "high"),
-  region = c("north", "north", "south", "east", "west", "east", "south", "west"),
-  target = c(0, 0, 1, 1, 0, 1, 1, 1)
-)
+raw_data <- read.csv("data/titanic/train.csv")
 
-dataset <- sme_dataset(data, target = "target")
-data
+analysis_data <- raw_data[c(
+  "Survived",
+  "Pclass",
+  "Sex",
+  "Age",
+  "SibSp",
+  "Parch",
+  "Fare",
+  "Embarked"
+)]
+
+analysis_data$Pclass <- as.factor(analysis_data$Pclass)
+analysis_data$Survived <- as.integer(analysis_data$Survived)
+
+dataset <- sme_dataset(analysis_data, target = "Survived")
+head(analysis_data)
 ```
 
 # Metrics
@@ -30,35 +48,49 @@ data
 Numerical variables receive variance and AUC. Categorical variables receive entropy.
 
 ```{r}
-attribute_metrics(data, target = "target", positive_class = 1)
+metrics <- attribute_metrics(analysis_data, target = "Survived", positive_class = 1)
+metrics
 ```
 
 # Discretization
 
 ```{r}
-discretize_dataset_equal_width(data[c("age", "income")], bins = 3)
-discretize_dataset_equal_frequency(data[c("age", "income")], bins = 3)
+numeric_features <- c("Age", "SibSp", "Parch", "Fare")
+
+head(discretize_dataset_equal_width(analysis_data[numeric_features], bins = 4))
+head(discretize_dataset_equal_frequency(analysis_data[numeric_features], bins = 4))
 ```
 
 # Normalization and standardization
 
 ```{r}
-normalize_dataset(data)
-standardize_dataset(data)
+head(normalize_dataset(analysis_data[numeric_features]))
+head(standardize_dataset(analysis_data[numeric_features]))
 ```
 
 # Filtering and associations
 
 ```{r}
-filter_variables(data, metric = "auc", threshold = 0.7, target = "target", positive_class = 1)
+filtered_by_auc <- filter_variables(
+  analysis_data,
+  metric = "auc",
+  threshold = 0.55,
+  target = "Survived",
+  positive_class = 1
+)
+head(filtered_by_auc)
 
-matrix <- association_matrix(data[c("age", "income", "segment", "region")])
+matrix <- association_matrix(analysis_data[c("Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")])
 matrix
 ```
 
 # Plots
 
 ```{r}
-plot_auc_values(data, target = "target", positive_class = 1)
+plot_auc_values(analysis_data, target = "Survived", positive_class = 1)
 plot_association_matrix(matrix)
 ```
+
+# Next steps
+
+When the second dataset is added, repeat the same workflow in a new section: load the data, identify the binary target, choose meaningful numerical/categorical variables, and show the same functions again.

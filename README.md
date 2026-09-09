@@ -7,6 +7,10 @@
 ```text
 .
 ├── README.md
+├── data/
+│   └── titanic/
+│       ├── test.csv
+│       └── train.csv
 ├── usage_examples.Rmd
 └── package/
     ├── DESCRIPTION
@@ -35,16 +39,29 @@ During development, you can also load the package with:
 devtools::load_all("package")
 ```
 
-## Dataset recommendation
+## Render the R Markdown example
 
-For the final `.Rmd`, use a tabular dataset with:
+The example file is `usage_examples.Rmd`. It can be rendered to HTML with:
 
-- Numerical variables for variance, AUC, normalization, standardization, correlation, and discretization.
-- Categorical variables for entropy and mutual information.
-- One binary target/class variable, because AUC needs a supervised binary class.
-- Clear column names and a moderate number of rows, so the examples remain readable.
+```r
+rmarkdown::render("usage_examples.Rmd")
+```
 
-Customer churn, credit default, Titanic survival, heart disease, bank marketing, or loan approval datasets are good candidates.
+This requires Pandoc to be available on the system path. RStudio usually includes Pandoc automatically.
+
+## Current example dataset
+
+The first example uses the Titanic dataset in `data/titanic/train.csv`.
+
+- Binary target: `Survived`
+- Numerical variables: `Age`, `SibSp`, `Parch`, `Fare`
+- Categorical variables: `Pclass`, `Sex`, `Embarked`
+
+The R Markdown document intentionally ignores identifiers and high-cardinality text fields such as `PassengerId`, `Name`, `Ticket`, and `Cabin` because they make the first explanation less clear.
+
+## Second dataset recommendation
+
+For the later second example, choose another tabular dataset with numerical columns, categorical columns, and one binary target. Customer churn, credit default, heart disease, bank marketing, or loan approval datasets are good candidates.
 
 ## Publishing later
 
