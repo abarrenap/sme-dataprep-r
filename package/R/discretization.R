@@ -1,8 +1,13 @@
 #' Discretize one numerical variable using equal-width intervals.
 #'
-#' @param x Numerical vector.
-#' @param bins Number of intervals.
-#' @return Ordered factor with interval labels.
+#' Equal-width discretization transforms a continuous numerical vector into an
+#' ordered categorical vector. The function splits the range from the minimum to
+#' the maximum observed value into intervals with the same width. Missing values
+#' are ignored when calculating the limits and remain missing in the result.
+#'
+#' @param x Numerical vector to discretize.
+#' @param bins Number of intervals to create. Must be a positive integer.
+#' @return Ordered factor with labels `bin_1`, `bin_2`, and so on.
 #' @export
 discretize_equal_width <- function(x, bins = 5) {
   if (!is.numeric(x)) stop("equal-width discretization requires a numeric vector.")
@@ -20,9 +25,14 @@ discretize_equal_width <- function(x, bins = 5) {
 
 #' Discretize one numerical variable using equal-frequency bins.
 #'
-#' @param x Numerical vector.
-#' @param bins Number of bins.
-#' @return Ordered factor with bin labels.
+#' Equal-frequency discretization sorts the valid observations and creates bins
+#' with approximately the same number of rows. The numerical width of the bins
+#' can be different, but the frequency of observations per bin is more balanced.
+#'
+#' @param x Numerical vector to discretize.
+#' @param bins Desired number of bins. If the vector has fewer unique values,
+#'   the effective number of bins is reduced.
+#' @return Ordered factor with labels `bin_1`, `bin_2`, and so on.
 #' @export
 discretize_equal_frequency <- function(x, bins = 5) {
   if (!is.numeric(x)) stop("equal-frequency discretization requires a numeric vector.")
@@ -42,10 +52,15 @@ discretize_equal_frequency <- function(x, bins = 5) {
 
 #' Apply equal-width discretization to numeric columns in a data frame.
 #'
-#' @param data Data frame.
-#' @param bins Number of intervals.
-#' @param columns Optional columns to transform.
-#' @return Data frame with transformed columns.
+#' This is the dataset version of `discretize_equal_width`. It returns a copy of
+#' the input data frame and replaces only the selected numerical columns with
+#' equal-width bin labels.
+#'
+#' @param data Data frame containing the variables to transform.
+#' @param bins Number of equal-width intervals for each selected column.
+#' @param columns Optional character vector with column names. If `NULL`, all
+#'   numerical columns are transformed.
+#' @return Data frame with selected columns transformed into ordered factors.
 #' @export
 discretize_dataset_equal_width <- function(data, bins = 5, columns = NULL) {
   result <- data
@@ -56,10 +71,15 @@ discretize_dataset_equal_width <- function(data, bins = 5, columns = NULL) {
 
 #' Apply equal-frequency discretization to numeric columns in a data frame.
 #'
-#' @param data Data frame.
-#' @param bins Number of bins.
-#' @param columns Optional columns to transform.
-#' @return Data frame with transformed columns.
+#' This is the dataset version of `discretize_equal_frequency`. It returns a
+#' copy of the input data frame and replaces only the selected numerical columns
+#' with approximately equal-frequency bin labels.
+#'
+#' @param data Data frame containing the variables to transform.
+#' @param bins Desired number of frequency groups for each selected column.
+#' @param columns Optional character vector with column names. If `NULL`, all
+#'   numerical columns are transformed.
+#' @return Data frame with selected columns transformed into ordered factors.
 #' @export
 discretize_dataset_equal_frequency <- function(data, bins = 5, columns = NULL) {
   result <- data

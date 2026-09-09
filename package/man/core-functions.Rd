@@ -26,6 +26,36 @@ Functions for discretization, metrics, normalization, standardization,
 variable filtering, pairwise association, plotting, and a small S3 dataset
 object used in the SME coursework package.
 }
+\details{
+The package is intentionally educational: the required metrics are implemented
+directly instead of calling specialized packages that already solve the
+assignment.
+
+\strong{Discretization.} \code{discretize_equal_width()} splits the numerical
+range of a variable into intervals with the same width. \code{discretize_equal_frequency()}
+sorts the observations and creates bins with approximately the same number of
+rows.
+
+\strong{Variance.} \code{variance_metric()} measures how spread out numerical
+values are around their mean. Population variance divides by \code{n}; sample
+variance divides by \code{n - 1}.
+
+\strong{Entropy.} \code{entropy()} measures uncertainty in a discrete variable.
+It calculates category probabilities and applies \code{-sum(p * log(p))}.
+
+\strong{AUC.} \code{auc_score()} evaluates a numerical attribute against a
+binary target. The function compares every positive observation with every
+negative observation. Higher positive scores count as one win, ties count as
+half a win, and the final AUC is the average across all pairs.
+
+\strong{Normalization and standardization.} \code{normalize_variable()} rescales
+values to \code{[0, 1]}. \code{standardize_variable()} converts values to
+z-scores by subtracting the mean and dividing by the standard deviation.
+
+\strong{Association matrix.} Numerical pairs use Pearson correlation.
+Categorical pairs use mutual information. Mixed numerical-categorical pairs are
+returned as \code{NA} in this first version.
+}
 \usage{
 discretize_equal_width(x, bins = 5)
 discretize_equal_frequency(x, bins = 5)
@@ -50,27 +80,38 @@ plot_auc_values(data, target, positive_class = NULL)
 plot_association_matrix(matrix)
 }
 \arguments{
-\item{x}{A vector.}
-\item{y}{A second vector.}
-\item{bins}{Number of bins or intervals.}
-\item{data}{A data frame.}
-\item{columns}{Optional columns to transform.}
-\item{sample}{Use sample variance when \code{TRUE}.}
+\item{x}{A vector. It must be numerical for variance, normalization,
+standardization, correlation, and discretization. It can be categorical for
+entropy and mutual information.}
+\item{y}{A second vector with the same length as \code{x}.}
+\item{bins}{Number of bins or intervals. Must be a positive integer.}
+\item{data}{A data frame containing the variables to transform or evaluate.}
+\item{columns}{Optional character vector with column names to transform. If
+\code{NULL}, all numerical columns are used where appropriate.}
+\item{sample}{Use sample variance when \code{TRUE}; otherwise population
+variance is calculated.}
 \item{base}{Logarithm base for entropy or mutual information.}
-\item{scores}{Numerical scores for AUC.}
-\item{target}{Binary target vector or target column name.}
-\item{positive_class}{Class value treated as positive.}
-\item{metric}{Metric name used for filtering.}
-\item{threshold}{Numeric threshold used for filtering.}
+\item{scores}{Numerical scores for AUC. These are usually the values of one
+numerical attribute.}
+\item{target}{Binary target vector or target column name, depending on the
+function.}
+\item{positive_class}{Class value treated as positive when calculating AUC.}
+\item{metric}{Metric name used for filtering, such as \code{"variance"},
+\code{"auc"}, or \code{"entropy"}.}
+\item{threshold}{Numeric threshold used for filtering variables.}
 \item{operator}{Comparison operator: \code{>=}, \code{>}, \code{<=}, or \code{<}.}
-\item{path}{CSV path.}
+\item{path}{CSV path for reading or writing a dataset.}
 \item{dataset}{An \code{sme_dataset} object.}
-\item{matrix}{Numeric association matrix.}
+\item{matrix}{Numeric association matrix returned by \code{association_matrix}.}
 \item{...}{Additional arguments passed to CSV helpers.}
 }
 \value{
-A vector, data frame, matrix, plot side effect, or \code{sme_dataset} object,
-depending on the function called.
+\code{discretize_*} functions return ordered factors or data frames with
+ordered factor columns. Metric functions return numeric values or a data frame
+with columns \code{attribute}, \code{metric}, and \code{value}. Preprocessing
+functions return transformed vectors or data frames. \code{association_matrix()}
+returns a square numeric matrix. Plot functions draw a plot and invisibly return
+the plotted object.
 }
 \examples{
 data <- data.frame(

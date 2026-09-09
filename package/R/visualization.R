@@ -1,9 +1,13 @@
 #' Plot AUC values for numerical attributes.
 #'
-#' @param data Data frame.
-#' @param target Binary target column.
-#' @param positive_class Optional positive class.
-#' @return Invisibly returns the AUC data frame.
+#' The plot compares the AUC values of all numerical variables against a binary
+#' target. Taller bars indicate variables whose larger values are more strongly
+#' associated with the positive class.
+#'
+#' @param data Data frame containing numerical variables and a binary target.
+#' @param target Name of the binary target column.
+#' @param positive_class Optional value treated as the positive class.
+#' @return Invisibly returns the data frame of AUC values used in the plot.
 #' @export
 plot_auc_values <- function(data, target, positive_class = NULL) {
   metrics <- attribute_metrics(data, target = target, positive_class = positive_class)
@@ -23,7 +27,10 @@ plot_auc_values <- function(data, target, positive_class = NULL) {
 
 #' Plot an association matrix.
 #'
-#' @param matrix Numeric association matrix.
+#' Displays the output of `association_matrix` as a heatmap. This makes it
+#' easier to identify strong pairwise relationships between variables.
+#'
+#' @param matrix Numeric association matrix returned by `association_matrix`.
 #' @return Invisibly returns the input matrix.
 #' @export
 plot_association_matrix <- function(matrix) {
