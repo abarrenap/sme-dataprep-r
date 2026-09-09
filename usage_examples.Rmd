@@ -1,5 +1,5 @@
 ---
-title: "SME DataPrep R examples"
+title: "SME DataPrep examples"
 author: "Aimar Barrena"
 output: pdf_document
 ---
@@ -15,21 +15,17 @@ if (requireNamespace("smeDataPrep", quietly = TRUE)) {
 }
 ```
 
-# Goal
+# Introduction
 
-This document illustrates the package with the Titanic training dataset stored in `data/titanic/train.csv`. The target variable is `Survived`, where `1` means the passenger survived and `0` means they did not.
+This document illustrates the main functions of the package with two supervised tabular datasets. The first dataset is used as a general walkthrough of the available tools. The second dataset is used for a shorter, more realistic analysis where we select only the most relevant functions and plots.
 
-The objective is to show how the functions in the package can be used to preprocess and describe a real dataset. Titanic is useful for this first example because it combines numerical variables such as `Age` and `Fare`, categorical variables such as `Sex` and `Embarked`, and a binary supervised target, `Survived`.
+# Example 1: general preprocessing workflow
 
-The examples are deliberately written step by step. For each group of functions, this document explains what the method measures, why it is useful in data preprocessing, and how the implemented function calculates it.
+The goal of this section is not to study a specific historical dataset. The dataset is simply a convenient example of a supervised table with numerical variables, categorical variables, missing values, and a binary target. This is the kind of structure where the package functions are useful.
 
-# Data
+## 1. Load and select variables
 
-The Titanic training file has passenger-level information and the binary outcome `Survived`.
-
-For this first example, we keep a focused set of variables. `Age`, `SibSp`, `Parch`, and `Fare` are treated as numerical variables. `Pclass`, `Sex`, and `Embarked` are treated as categorical variables. `Pclass` appears as a number in the CSV file, but it represents first, second, or third passenger class, so it is more meaningful to handle it as a category.
-
-Columns such as `PassengerId`, `Name`, `Ticket`, and `Cabin` are not used in this first walkthrough. They contain identifiers or high-cardinality text values, which are less useful for explaining the required preprocessing functions clearly.
+We keep a small set of columns so that the outputs are easy to interpret. The target is binary, and the explanatory variables include both numerical and categorical attributes.
 
 ```{r}
 raw_data <- read.csv("data/titanic/train.csv")
@@ -52,51 +48,44 @@ dataset <- sme_dataset(analysis_data, target = "Survived")
 head(analysis_data)
 ```
 
-# Dataset management utilities
+## 2. Inspect the dataset before transforming it
 
-Before applying metrics or transformations, it is useful to inspect the structure of the dataset. `detect_variable_types` classifies columns as numerical, categorical, binary, identifiers, or high-cardinality categorical variables. `missing_value_report` shows where missing data appears. `validate_binary_target` checks that the target is suitable for AUC. `impute_missing_values` creates a cleaned copy by filling missing numerical values with the median and categorical values with the mode when `strategy = "auto"`.
+Before calculating metrics or changing variables, we check whether the target is valid, what type of variables we have, and where missing values appear.
 
 ```{r}
 validate_binary_target(analysis_data, "Survived")
 detect_variable_types(analysis_data)
 ```
 
+The type report separates the target from numerical and categorical variables. `Survived` is detected as binary, `Age` and `Fare` are numerical, and variables such as `Sex` and `Embarked` are categorical. This tells us which functions are appropriate for each column.
+
 ```{r}
 missing_value_report(analysis_data)
 ```
+
+The missing-value report shows that `Age` has 177 missing values, about 19.9% of the selected rows. `Embarked` has only 2 missing values. This is a useful preprocessing finding: some functions can ignore missing values, but for a clean analysis dataset we may want to impute them.
 
 ```{r}
 imputed_data <- impute_missing_values(analysis_data, strategy = "auto")
 missing_value_report(imputed_data)
 ```
 
-```{r}
-summary <- dataset_summary(analysis_data)
-summary[c("n_rows", "n_columns", "numerical_columns", "categorical_columns")]
-```
+After automatic imputation, missing values disappear from this selected dataset. The automatic rule uses the median for numerical variables and the most frequent value for categorical variables.
 
-# Metrics
+## 3. Calculate metrics by variable type
 
-The function `attribute_metrics` chooses a metric according to the type of each variable. For numerical variables, it computes variance and, when a binary target is provided, AUC. For categorical variables, it computes entropy.
-
-Variance measures how spread out a numerical variable is around its mean. A variable with variance close to zero has almost the same value for every row, so it usually contains little information.
-
-Entropy measures the uncertainty or diversity of a categorical variable. If almost all passengers have the same category, entropy is low. If the categories are more evenly distributed, entropy is higher.
-
-AUC means Area Under the ROC Curve. In this package it is implemented from pairwise comparisons: every survivor is compared with every non-survivor. If the survivor has a higher value for the numerical attribute, it counts as a win; if both values are equal, it counts as half a win. The final AUC is the proportion of wins over all possible survivor/non-survivor pairs. An AUC of 0.5 means the attribute is not better than random ordering, while values closer to 1 mean higher values of the attribute are more associated with survival.
+`attribute_metrics` chooses the metric according to the variable type: variance and AUC for numerical variables, entropy for categorical variables.
 
 ```{r}
 metrics <- attribute_metrics(analysis_data, target = "Survived", positive_class = 1)
 metrics
 ```
 
-# Discretization
+How to read this table: variance measures spread, entropy measures diversity in categories, and AUC measures how well a numerical variable orders the two target classes. In this output, `Fare` has a higher AUC than `Age`, meaning fare is more informative than age as a single numerical ranking variable in this example. `Age` has an AUC below 0.5, so larger values of age are not associated with the positive class under this direct ordering.
 
-Discretization converts a numerical variable into a categorical one by placing values into intervals or bins. This is useful when an algorithm or a metric expects discrete values, or when we want to simplify a continuous variable for interpretation.
+## 4. Discretize numerical variables
 
-Equal-width discretization divides the range between the minimum and maximum value into intervals of the same size. For example, the width of each `Age` interval is determined by the age range divided by the number of bins.
-
-Equal-frequency discretization sorts the observations and creates bins with approximately the same number of rows. This means the numerical width of the bins can be different, but their frequency is more balanced.
+Discretization converts numerical values into bins. Equal-width bins split the numerical range into intervals of the same size. Equal-frequency bins try to place a similar number of rows in each bin.
 
 ```{r}
 numeric_features <- c("Age", "SibSp", "Parch", "Fare")
@@ -105,9 +94,7 @@ head(discretize_dataset_equal_width(analysis_data[numeric_features], bins = 4))
 head(discretize_dataset_equal_frequency(analysis_data[numeric_features], bins = 4))
 ```
 
-The package also includes two additional discretization methods. `discretize_by_thresholds` lets the analyst choose meaningful cut points. In Titanic, an age threshold can separate children, adults, and older passengers.
-
-`discretize_by_standard_deviation` groups values according to how far they are from the mean. This is useful when the relative position of a value is more important than its original unit.
+Equal-width bins are easier to interpret because each interval has the same numerical size. Equal-frequency bins are often more balanced because they adapt to the empirical distribution of the variable.
 
 ```{r}
 age_groups <- discretize_by_thresholds(
@@ -126,32 +113,16 @@ head(data.frame(
 ), 10)
 ```
 
-# Normalization and standardization
+Manual thresholds are useful when the cut points have a real meaning. Standard-deviation discretization is different: it classifies values according to their distance from the mean, so the groups describe relative position rather than fixed domain thresholds.
 
-Normalization and standardization are transformations for numerical variables. They do not change the order of the observations, but they change the scale.
-
-Normalization rescales a variable to the interval `[0, 1]`. The minimum value becomes 0 and the maximum value becomes 1. This is useful when variables have very different units, such as age in years and fare in pounds.
-
-Standardization subtracts the mean and divides by the standard deviation. After this transformation, the variable has mean 0 and standard deviation 1. This is useful when we want to compare variables on a common scale while preserving how far each observation is from the average.
+## 5. Normalize, standardize, filter, and compare associations
 
 ```{r}
 head(normalize_dataset(analysis_data[numeric_features]))
 head(standardize_dataset(analysis_data[numeric_features]))
 ```
 
-# Filtering and associations
-
-Variable filtering uses the metrics calculated earlier to keep only variables that satisfy a threshold. This is a simple preprocessing strategy for reducing a dataset before later analysis.
-
-In this example, we keep numerical variables whose AUC is at least 0.55. The threshold is intentionally modest because a single Titanic variable is not expected to perfectly separate survivors from non-survivors. The goal is to show the mechanism: calculate a metric for each variable, compare it with a threshold, and return a new dataset with the variables that pass the rule.
-
-The function `association_matrix` compares variables two by two. The measure depends on the types of the pair.
-
-For two numerical variables, the package calculates Pearson correlation. This measures linear association and returns values between -1 and 1. A value near 1 means both variables tend to increase together, a value near -1 means one tends to decrease when the other increases, and a value near 0 means there is little linear association.
-
-For two categorical variables, the package calculates mutual information. Mutual information measures how much knowing one variable reduces uncertainty about the other. It is computed from entropy: the entropy of each variable is compared with the entropy of their joint distribution.
-
-For mixed numerical-categorical pairs, the matrix returns missing values in this first version, because the assignment specifically asks for correlation for numerical variables and mutual information for categorical variables.
+Normalized values are between 0 and 1. Standardized values are centered around 0 and expressed in standard deviations. These transformations are useful when variables have different units or scales.
 
 ```{r}
 filtered_by_auc <- filter_variables(
@@ -162,25 +133,87 @@ filtered_by_auc <- filter_variables(
   positive_class = 1
 )
 head(filtered_by_auc)
+```
 
+The filtered dataset keeps only variables that pass the selected metric threshold. With an AUC threshold of 0.55, the retained variables are the ones that show at least modest separation between the two classes.
+
+```{r}
 matrix <- association_matrix(analysis_data[c("Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")])
 matrix
 ```
 
-# Plots
+The association matrix uses Pearson correlation for numerical pairs and mutual information for categorical pairs. Mixed numerical-categorical pairs appear as missing values in this version because they require a different association measure.
 
-The ROC curve is the specific plot associated with AUC. It shows the tradeoff between true positive rate and false positive rate for all possible thresholds of one numerical attribute. Here we draw the ROC curve for `Fare` as an example. `plot_roc_curves` extends this idea to several attributes in the same figure.
-
-The barplot created by `compare_auc_values` is different: it summarizes and compares the final AUC values of several numerical attributes in one figure. `plot_variable_distribution` shows the estimated distribution of a numerical variable. With `by_class = TRUE`, it draws one curve for each target class, which helps compare survivors and non-survivors. The association matrix plot gives a compact visual summary of pairwise relationships between the selected variables.
+## 6. Interpret the plots
 
 ```{r}
 plot_roc_curve(analysis_data$Fare, analysis_data$Survived, positive_class = 1, label = "Fare")
+```
+
+The ROC curve shows the tradeoff between true positive rate and false positive rate for all thresholds of `Fare`. A curve close to the diagonal would mean random ordering. Here the curve is above the diagonal, which matches the AUC value above 0.5.
+
+```{r}
 plot_roc_curves(analysis_data, target = "Survived", columns = c("Age", "Fare", "SibSp", "Parch"), positive_class = 1)
 compare_auc_values(analysis_data, target = "Survived", positive_class = 1)
+```
+
+The multi-ROC plot and the AUC comparison barplot answer related questions. The ROC plot shows the full threshold behavior of each variable, while the barplot gives a compact ranking by final AUC.
+
+```{r}
 plot_variable_distribution(analysis_data, variable = "Fare", target = "Survived", by_class = TRUE)
 plot_association_matrix(matrix)
 ```
 
-# Next steps
+The distribution plot helps compare the shape of one numerical variable across target classes. The matrix plot makes pairwise relationships easy to scan visually.
 
-When the second dataset is added, repeat the same workflow in a new section: load the data, identify the binary target, choose meaningful numerical/categorical variables, and show the same functions again.
+# Example 2: compact diabetes analysis
+
+This final section uses a more realistic health dataset. Instead of using every function again, we apply a smaller set of relevant tools: target validation, missing-value/type inspection, descriptive comparison by class, AUC metrics, ROC curves, and distribution plots.
+
+```{r}
+diabetes_data <- read.csv("data/diabetes/diabetes_prediction_dataset.csv")
+head(diabetes_data)
+```
+
+```{r}
+validate_binary_target(diabetes_data, "diabetes")
+missing_value_report(diabetes_data)
+```
+
+The diabetes dataset has 100,000 rows and no missing values. The target is binary, so it is valid for AUC/ROC analysis. The positive class is rare: about 8.5% of observations have `diabetes = 1`.
+
+```{r}
+prop.table(table(diabetes_data$diabetes))
+```
+
+```{r}
+aggregate(
+  diabetes_data[c("age", "bmi", "HbA1c_level", "blood_glucose_level")],
+  by = list(diabetes = diabetes_data$diabetes),
+  FUN = mean
+)
+```
+
+The class means already show a clear pattern: observations with diabetes are older on average and have higher BMI, HbA1c level, and blood glucose level. This does not prove causality, but it identifies variables that are useful to inspect more closely.
+
+```{r}
+set.seed(7)
+diabetes_sample <- rbind(
+  diabetes_data[diabetes_data$diabetes == 0, ][sample(sum(diabetes_data$diabetes == 0), 2000), ],
+  diabetes_data[diabetes_data$diabetes == 1, ][sample(sum(diabetes_data$diabetes == 1), 2000), ]
+)
+
+diabetes_features <- c("age", "bmi", "HbA1c_level", "blood_glucose_level", "hypertension", "heart_disease")
+diabetes_metrics <- attribute_metrics(diabetes_sample[c(diabetes_features, "diabetes")], target = "diabetes", positive_class = 1)
+diabetes_metrics[diabetes_metrics$metric == "auc", ][order(diabetes_metrics[diabetes_metrics$metric == "auc", ]$value, decreasing = TRUE), ]
+```
+
+The package AUC is implemented with pairwise comparisons for educational clarity. To keep this example fast, we use a reproducible balanced sample. In this sample, `HbA1c_level` and `blood_glucose_level` are the strongest single numerical separators, followed by `age` and `bmi`. The binary medical-history variables are still informative, but their AUC values are lower as single-variable ranking scores.
+
+```{r}
+plot_roc_curves(diabetes_sample, target = "diabetes", columns = c("HbA1c_level", "blood_glucose_level", "age", "bmi"), positive_class = 1)
+plot_variable_distribution(diabetes_data, variable = "HbA1c_level", target = "diabetes", by_class = TRUE)
+plot_variable_distribution(diabetes_data, variable = "blood_glucose_level", target = "diabetes", by_class = TRUE)
+```
+
+The ROC curves confirm the metric table: HbA1c and blood glucose are the most useful individual numerical variables in this quick analysis. The distribution plots explain why: the positive class is shifted toward higher HbA1c and glucose values. A practical preprocessing step for a later model would be to keep these variables, keep age and BMI as supporting predictors, and treat the class imbalance explicitly.
