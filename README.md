@@ -40,6 +40,11 @@ install.packages("devtools") # Run once if devtools is not installed
 devtools::install_github("abarrenap/sme-dataprep-r", subdir = "package")
 ```
 
+Install `devtools` in a clean R session before rendering the example document.
+If R reports that an older `rlang` namespace is already loaded, restart R,
+update it with `install.packages("rlang")`, restart R once more, and then install
+`devtools`.
+
 The `subdir` argument is required because the package source is stored in the
 repository's `package/` directory.
 

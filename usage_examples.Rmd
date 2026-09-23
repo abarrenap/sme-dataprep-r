@@ -6,10 +6,13 @@ output: pdf_document
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-if (!requireNamespace("remotes", quietly = TRUE)) {
-  install.packages("remotes")
+if (!requireNamespace("devtools", quietly = TRUE)) {
+  stop(
+    "Install devtools in a clean R session with install.packages('devtools'), ",
+    "restart R, and render this document again."
+  )
 }
-remotes::install_github(
+devtools::install_github(
   "abarrenap/sme-dataprep-r",
   subdir = "package",
   upgrade = "never",
