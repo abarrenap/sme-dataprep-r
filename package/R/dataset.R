@@ -38,11 +38,15 @@ print.sme_dataset <- function(x, ...) {
 #'
 #' @param path Path to the CSV file.
 #' @param target Optional target column name.
+#' @param variables Optional character vector of column names to select. If
+#'   `NULL`, all columns are loaded.
 #' @param ... Additional arguments passed to `read.csv`.
 #' @return SME dataset object.
 #' @export
-read_sme_dataset <- function(path, target = NULL, ...) {
-  sme_dataset(read.csv(path, ...), target = target)
+read_sme_dataset <- function(path, target = NULL, variables = NULL, ...) {
+  data <- read.csv(path, ...)
+  if (!is.null(variables)) data <- data[variables]
+  sme_dataset(data, target = target)
 }
 
 #' Write an SME dataset to CSV.

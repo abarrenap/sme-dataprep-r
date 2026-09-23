@@ -84,8 +84,8 @@ density estimate for one numerical variable. If a target is provided and
 \code{by_class = TRUE}, it draws one line per class.
 
 \strong{Dataset management.} \code{dataset_summary()} gives a compact overview
-of dataset dimensions, detected variable types, missing values, and numerical or
-categorical columns. \code{missing_value_report()} reports missing counts and
+of dataset dimensions and detected variable types, including per-variable
+missing-value and unique-value information. \code{missing_value_report()} reports missing counts and
 rates. \code{detect_variable_types()} classifies variables for preprocessing.
 \code{validate_binary_target()} checks that a target can be used for AUC.
 \code{impute_missing_values()} fills missing values using transparent median,
@@ -120,7 +120,7 @@ association_matrix(data)
 sme_dataset(data, target = NULL)
 summary_sme_dataset(dataset)
 impute_sme_dataset(dataset, strategy = "auto", fill_value = NULL, columns = NULL)
-read_sme_dataset(path, target = NULL, ...)
+read_sme_dataset(path, target = NULL, variables = NULL, ...)
 write_sme_dataset(dataset, path, ...)
 plot_roc_curve(scores, target, positive_class = NULL, label = "attribute")
 plot_roc_curves(data, target, columns = NULL, positive_class = NULL)
@@ -155,6 +155,8 @@ variance is calculated.}
 numerical attribute.}
 \item{target}{Binary target vector or target column name, depending on the
 function.}
+\item{variables}{Optional character vector of columns to select while reading
+a CSV file. If \code{NULL}, all columns are loaded.}
 \item{positive_class}{Class value treated as positive when calculating AUC.}
 \item{label}{Optional label used in the ROC plot legend.}
 \item{variable}{Name of the numerical variable to plot.}

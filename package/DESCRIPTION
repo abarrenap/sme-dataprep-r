@@ -10,6 +10,8 @@ Description: Educational implementations of data preprocessing utilities for
     entropy, AUC, normalization, standardization, filtering, and association
     matrices.
 License: MIT + file LICENSE
+URL: https://github.com/abarrenap/sme-dataprep-r
+BugReports: https://github.com/abarrenap/sme-dataprep-r/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

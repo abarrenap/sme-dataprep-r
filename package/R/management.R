@@ -65,20 +65,18 @@ missing_value_report <- function(data) {
 
 #' Create a compact dataset summary.
 #'
-#' The summary combines dimensions, variable type detection, missing-value
-#' information, numerical columns, and categorical columns.
+#' The summary combines dataset dimensions and variable type detection. The
+#' variable report also includes missing-value and unique-value information for
+#' each column.
 #'
 #' @param data Data frame to summarize.
-#' @return List with dataset dimensions and summary tables.
+#' @return List with dataset dimensions and a variable summary table.
 #' @export
 dataset_summary <- function(data) {
   list(
     n_rows = nrow(data),
     n_columns = ncol(data),
-    variables = detect_variable_types(data),
-    missing_values = missing_value_report(data),
-    numerical_columns = names(data)[vapply(data, is.numeric, logical(1))],
-    categorical_columns = names(data)[!vapply(data, is.numeric, logical(1))]
+    variables = detect_variable_types(data)
   )
 }
 

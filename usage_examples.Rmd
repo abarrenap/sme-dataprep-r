@@ -4,22 +4,25 @@ author: "Aimar Barrena"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-if (requireNamespace("smeDataPrep", quietly = TRUE)) {
-  library(smeDataPrep)
-} else {
-  for (file in list.files("package/R", full.names = TRUE)) {
-    source(file)
-  }
+if (!requireNamespace("devtools", quietly = TRUE)) {
+  install.packages("devtools")
 }
+devtools::install_github(
+  "abarrenap/sme-dataprep-r",
+  subdir = "package",
+  upgrade = "never",
+  quiet = TRUE
+)
+library(smeDataPrep)
 ```
 
 # Introduction
 
-This document illustrates the main functions of the package with two supervised tabular datasets. The first dataset is used as a general walkthrough of the available tools. The second dataset is used for a shorter, more realistic analysis where we select only the most relevant functions and plots.
+This document illustrates the main functions of the `smeDataPrep` package with two supervised tabular datasets. The first dataset is used as a general walkthrough of the available tools. The second dataset is used for a shorter, more realistic analysis where we select only the most relevant functions and plots for that dataset.
 
-# Example 1: general preprocessing workflow
+# Example 1: Example use of all the available functions in the package
 
 The goal of this section is not to study a specific historical dataset. The dataset is simply a convenient example of a supervised table with numerical variables, categorical variables, missing values, and a binary target. This is the kind of structure where the package functions are useful.
 
@@ -28,9 +31,7 @@ The goal of this section is not to study a specific historical dataset. The data
 We keep a small set of columns so that the outputs are easy to interpret. The target is binary, and the explanatory variables include both numerical and categorical attributes.
 
 ```{r}
-raw_data <- read.csv("data/titanic/train.csv")
-
-analysis_data <- raw_data[c(
+VARIABLES <- c(
   "Survived",
   "Pclass",
   "Sex",
@@ -39,13 +40,15 @@ analysis_data <- raw_data[c(
   "Parch",
   "Fare",
   "Embarked"
-)]
+)
+TARGET <- "Survived"
 
-analysis_data$Pclass <- as.factor(analysis_data$Pclass)
-analysis_data$Survived <- as.integer(analysis_data$Survived)
-
-dataset <- sme_dataset(analysis_data, target = "Survived")
-head(analysis_data)
+dataset <- read_sme_dataset(
+  "data/titanic/train.csv",
+  target = TARGET,
+  variables = VARIABLES
+)
+head(dataset$data)
 ```
 
 ## 2. Inspect the dataset before transforming it
@@ -53,20 +56,20 @@ head(analysis_data)
 Before calculating metrics or changing variables, we check whether the target is valid, what type of variables we have, and where missing values appear.
 
 ```{r}
-validate_binary_target(analysis_data, "Survived")
-detect_variable_types(analysis_data)
+validate_binary_target(dataset$data, TARGET)
+detect_variable_types(dataset$data)
 ```
 
 The type report separates the target from numerical and categorical variables. `Survived` is detected as binary, `Age` and `Fare` are numerical, and variables such as `Sex` and `Embarked` are categorical. This tells us which functions are appropriate for each column.
 
 ```{r}
-missing_value_report(analysis_data)
+missing_value_report(dataset$data)
 ```
 
 The missing-value report shows that `Age` has 177 missing values, about 19.9% of the selected rows. `Embarked` has only 2 missing values. This is a useful preprocessing finding: some functions can ignore missing values, but for a clean analysis dataset we may want to impute them.
 
 ```{r}
-imputed_data <- impute_missing_values(analysis_data, strategy = "auto")
+imputed_data <- impute_missing_values(dataset$data, strategy = "auto")
 missing_value_report(imputed_data)
 ```
 
@@ -77,7 +80,7 @@ After automatic imputation, missing values disappear from this selected dataset.
 `attribute_metrics` chooses the metric according to the variable type: variance and AUC for numerical variables, entropy for categorical variables.
 
 ```{r}
-metrics <- attribute_metrics(analysis_data, target = "Survived", positive_class = 1)
+metrics <- attribute_metrics(dataset$data, target = TARGET, positive_class = 1)
 metrics
 ```
 
@@ -90,25 +93,25 @@ Discretization converts numerical values into bins. Equal-width bins split the n
 ```{r}
 numeric_features <- c("Age", "SibSp", "Parch", "Fare")
 
-head(discretize_dataset_equal_width(analysis_data[numeric_features], bins = 4))
-head(discretize_dataset_equal_frequency(analysis_data[numeric_features], bins = 4))
+head(discretize_dataset_equal_width(dataset$data[numeric_features], bins = 4))
+head(discretize_dataset_equal_frequency(dataset$data[numeric_features], bins = 4))
 ```
 
 Equal-width bins are easier to interpret because each interval has the same numerical size. Equal-frequency bins are often more balanced because they adapt to the empirical distribution of the variable.
 
 ```{r}
 age_groups <- discretize_by_thresholds(
-  analysis_data$Age,
+  dataset$data$Age,
   thresholds = c(12, 60),
   labels = c("child", "adult", "older")
 )
 
-fare_sd_groups <- discretize_by_standard_deviation(analysis_data$Fare)
+fare_sd_groups <- discretize_by_standard_deviation(dataset$data$Fare)
 
 head(data.frame(
-  Age = analysis_data$Age,
+  Age = dataset$data$Age,
   age_group = age_groups,
-  Fare = analysis_data$Fare,
+  Fare = dataset$data$Fare,
   fare_sd_group = fare_sd_groups
 ), 10)
 ```
@@ -118,18 +121,18 @@ Manual thresholds are useful when the cut points have a real meaning. Standard-d
 ## 5. Normalize, standardize, filter, and compare associations
 
 ```{r}
-head(normalize_dataset(analysis_data[numeric_features]))
-head(standardize_dataset(analysis_data[numeric_features]))
+head(normalize_dataset(dataset$data[numeric_features]))
+head(standardize_dataset(dataset$data[numeric_features]))
 ```
 
 Normalized values are between 0 and 1. Standardized values are centered around 0 and expressed in standard deviations. These transformations are useful when variables have different units or scales.
 
 ```{r}
 filtered_by_auc <- filter_variables(
-  analysis_data,
+  dataset$data,
   metric = "auc",
   threshold = 0.55,
-  target = "Survived",
+  target = TARGET,
   positive_class = 1
 )
 head(filtered_by_auc)
@@ -138,7 +141,7 @@ head(filtered_by_auc)
 The filtered dataset keeps only variables that pass the selected metric threshold. With an AUC threshold of 0.55, the retained variables are the ones that show at least modest separation between the two classes.
 
 ```{r}
-matrix <- association_matrix(analysis_data[c("Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")])
+matrix <- association_matrix(dataset$data[c("Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")])
 matrix
 ```
 
@@ -147,49 +150,53 @@ The association matrix uses Pearson correlation for numerical pairs and mutual i
 ## 6. Interpret the plots
 
 ```{r}
-plot_roc_curve(analysis_data$Fare, analysis_data$Survived, positive_class = 1, label = "Fare")
+plot_roc_curve(dataset$data$Fare, dataset$data$Survived, positive_class = 1, label = "Fare")
 ```
 
 The ROC curve shows the tradeoff between true positive rate and false positive rate for all thresholds of `Fare`. A curve close to the diagonal would mean random ordering. Here the curve is above the diagonal, which matches the AUC value above 0.5.
 
 ```{r}
-plot_roc_curves(analysis_data, target = "Survived", columns = c("Age", "Fare", "SibSp", "Parch"), positive_class = 1)
-compare_auc_values(analysis_data, target = "Survived", positive_class = 1)
+plot_roc_curves(dataset$data, target = TARGET, columns = c("Age", "Fare", "SibSp", "Parch"), positive_class = 1)
+compare_auc_values(dataset$data, target = TARGET, positive_class = 1)
 ```
 
 The multi-ROC plot and the AUC comparison barplot answer related questions. The ROC plot shows the full threshold behavior of each variable, while the barplot gives a compact ranking by final AUC.
 
 ```{r}
-plot_variable_distribution(analysis_data, variable = "Fare", target = "Survived", by_class = TRUE)
+plot_variable_distribution(dataset$data, variable = "Fare", target = TARGET, by_class = TRUE)
 plot_association_matrix(matrix)
 ```
 
 The distribution plot helps compare the shape of one numerical variable across target classes. The matrix plot makes pairwise relationships easy to scan visually.
 
-# Example 2: compact diabetes analysis
+# Example 2: Real-world example
 
-This final section uses a more realistic health dataset. Instead of using every function again, we apply a smaller set of relevant tools: target validation, missing-value/type inspection, descriptive comparison by class, AUC metrics, ROC curves, and distribution plots.
+This final section uses a health dataset. Instead of using every function again, we apply a smaller set of relevant tools: target validation, missing-value/type inspection, descriptive comparison by class, AUC metrics, ROC curves, and distribution plots.
+
+This part also shows how we can directly use some of these functions with the dataset object.
 
 ```{r}
-diabetes_data <- read.csv("data/diabetes/diabetes_prediction_dataset.csv")
-head(diabetes_data)
+diabetes_data <- read_sme_dataset(
+  "data/diabetes/diabetes_prediction_dataset.csv",
+  target = "diabetes"
+)
+head(diabetes_data$data)
 ```
 
 ```{r}
-validate_binary_target(diabetes_data, "diabetes")
-missing_value_report(diabetes_data)
+summary_sme_dataset(diabetes_data)
 ```
 
 The diabetes dataset has 100,000 rows and no missing values. The target is binary, so it is valid for AUC/ROC analysis. The positive class is rare: about 8.5% of observations have `diabetes = 1`.
 
 ```{r}
-prop.table(table(diabetes_data$diabetes))
+prop.table(table(diabetes_data$data$diabetes))
 ```
 
 ```{r}
 aggregate(
-  diabetes_data[c("age", "bmi", "HbA1c_level", "blood_glucose_level")],
-  by = list(diabetes = diabetes_data$diabetes),
+  diabetes_data$data[c("age", "bmi", "HbA1c_level", "blood_glucose_level")],
+  by = list(diabetes = diabetes_data$data$diabetes),
   FUN = mean
 )
 ```
@@ -199,8 +206,8 @@ The class means already show a clear pattern: observations with diabetes are old
 ```{r}
 set.seed(7)
 diabetes_sample <- rbind(
-  diabetes_data[diabetes_data$diabetes == 0, ][sample(sum(diabetes_data$diabetes == 0), 2000), ],
-  diabetes_data[diabetes_data$diabetes == 1, ][sample(sum(diabetes_data$diabetes == 1), 2000), ]
+  diabetes_data$data[diabetes_data$data$diabetes == 0, ][sample(sum(diabetes_data$data$diabetes == 0), 2000), ],
+  diabetes_data$data[diabetes_data$data$diabetes == 1, ][sample(sum(diabetes_data$data$diabetes == 1), 2000), ]
 )
 
 diabetes_features <- c("age", "bmi", "HbA1c_level", "blood_glucose_level", "hypertension", "heart_disease")
@@ -212,8 +219,8 @@ The package AUC is implemented with pairwise comparisons for educational clarity
 
 ```{r}
 plot_roc_curves(diabetes_sample, target = "diabetes", columns = c("HbA1c_level", "blood_glucose_level", "age", "bmi"), positive_class = 1)
-plot_variable_distribution(diabetes_data, variable = "HbA1c_level", target = "diabetes", by_class = TRUE)
-plot_variable_distribution(diabetes_data, variable = "blood_glucose_level", target = "diabetes", by_class = TRUE)
+plot_variable_distribution(diabetes_data$data, variable = "HbA1c_level", target = "diabetes", by_class = TRUE)
+plot_variable_distribution(diabetes_data$data, variable = "blood_glucose_level", target = "diabetes", by_class = TRUE)
 ```
 
 The ROC curves confirm the metric table: HbA1c and blood glucose are the most useful individual numerical variables in this quick analysis. The distribution plots explain why: the positive class is shifted toward higher HbA1c and glucose values. A practical preprocessing step for a later model would be to keep these variables, keep age and BMI as supporting predictors, and treat the class imbalance explicitly.

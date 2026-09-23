@@ -1,6 +1,9 @@
 # SME DataPrep R
 
-`sme-dataprep-r` contains the R implementation for the Software Matemático y Estadístico assignment. The repository includes a standalone R Markdown usage document and a separate installable R package.
+`sme-dataprep-r` provides educational data-preprocessing utilities for the
+Software Matemático y Estadístico coursework. The package includes dataset
+management, missing-value handling, normalization, standardization,
+discretization, association metrics, AUC/ROC helpers, and visualizations.
 
 ## Repository layout
 
@@ -27,7 +30,26 @@
     │   └── visualization.R
 ```
 
-## Install locally
+## Install directly from GitHub
+
+The R package can be installed directly from this public repository with
+`devtools`:
+
+```r
+install.packages("devtools") # Run once if devtools is not installed
+devtools::install_github("abarrenap/sme-dataprep-r", subdir = "package")
+```
+
+The `subdir` argument is required because the package source is stored in the
+repository's `package/` directory.
+
+After installation, load it normally:
+
+```r
+library(smeDataPrep)
+```
+
+## Install from a local clone
 
 From this folder:
 
@@ -85,7 +107,7 @@ Additional implemented extras:
 - `discretize_by_thresholds`: manual cut points chosen by the analyst.
 - `discretize_by_standard_deviation`: groups values by distance from the mean.
 - `plot_variable_distribution`: density plot, optionally split by target class.
-- `dataset_summary`: compact overview of rows, columns, types, and missing values.
+- `dataset_summary`: compact overview of rows, columns, and a variable report that includes types and missing-value information.
 - `missing_value_report`: missing counts and missing percentages by variable.
 - `detect_variable_types`: practical type detection for numerical, categorical, binary, identifier, and high-cardinality variables.
 - `validate_binary_target`: checks that a target exists and has exactly two classes.
