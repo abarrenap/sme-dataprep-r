@@ -1,9 +1,8 @@
 # SME DataPrep R
 
 `sme-dataprep-r` provides educational data-preprocessing utilities for the
-Software Matemático y Estadístico coursework. The package includes dataset
-management, missing-value handling, normalization, standardization,
-discretization, association metrics, AUC/ROC helpers, and visualizations.
+Software Matemático y Estadístico coursework. The repository contains the
+`smeDataPrep` package, an R Markdown walkthrough, and its rendered PDF.
 
 ## Repository layout
 
@@ -17,6 +16,7 @@ discretization, association metrics, AUC/ROC helpers, and visualizations.
 │       ├── test.csv
 │       └── train.csv
 ├── usage_examples.Rmd
+├── usage_examples.pdf
 └── package/
     ├── DESCRIPTION
     ├── NAMESPACE
@@ -54,9 +54,14 @@ After installation, load it normally:
 library(smeDataPrep)
 ```
 
+The package provides an `sme_dataset` object for CSV data and an optional target,
+dataset summaries and type/missing-value checks, imputation, normalization and
+standardization, discretization, filtering, association measures, AUC/ROC
+utilities, and visualizations.
+
 ## Install from a local clone
 
-From this folder:
+From this folder, install the local package source with:
 
 ```r
 install.packages("remotes")
@@ -71,13 +76,18 @@ devtools::load_all("package")
 
 ## Render the R Markdown example
 
-The example file is `usage_examples.Rmd`. Its main output format is PDF and the author is set to `Aimar Barrena`.
+The example file is `usage_examples.Rmd`; the repository also includes the
+current rendered output, `usage_examples.pdf`. The document installs the GitHub
+package at render time, loads `smeDataPrep`, and uses the repository's local
+`data/` files. Render it from this repository folder:
 
 ```r
 rmarkdown::render("usage_examples.Rmd")
 ```
 
-This requires Pandoc and a LaTeX distribution to be available on the system path. RStudio usually includes Pandoc automatically. If LaTeX is missing, the lightweight option is TinyTeX:
+This requires `devtools`, Pandoc, and a LaTeX distribution. RStudio usually
+includes Pandoc automatically. If LaTeX is missing, the lightweight option is
+TinyTeX:
 
 ```r
 install.packages("tinytex")
@@ -118,6 +128,8 @@ Additional implemented extras:
 - `validate_binary_target`: checks that a target exists and has exactly two classes.
 - `impute_missing_values`: simple missing-value imputation with median/mode or explicit strategies.
 
-## Publishing later
+## Package source
 
-R packages are commonly made public through GitHub, where users can install them with `devtools::install_github("username/repository")`. Publishing to CRAN is also possible, but it requires stricter checks, documentation, examples, and package policy compliance.
+The installable R package lives in `package/`. Its metadata is in
+`package/DESCRIPTION`, and its exported functions are listed in
+`package/NAMESPACE`.
